@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # Keep the GitHub Actions used by CI up to date.
+  # Python dependencies are intentionally not automated: torch/deepfilternet/numpy are pinned
+  # together and must be bumped by hand.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

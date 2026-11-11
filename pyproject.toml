@@ -1,0 +1,85 @@
+[project]
+name = "audio-cleanup"
+version = "0.1.0"
+description = "Hum removal, denoising and loudness normalization for long recordings (conference talks, podcasts, OBS captures)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Gabriel Fontán Rodiño" }]
+keywords = ["audio", "denoise", "deepfilternet", "ffmpeg", "loudnorm", "obs"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+# Python 3.11 is the newest version supported by torch 2.0.1 (see the `deepfilternet` extra).
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "numpy<2", # DeepFilterNet 0.5.x / torch 2.0 are built against NumPy 1.x
+    "scipy",
+    "soundfile",
+    "noisereduce",
+]
+
+[project.optional-dependencies]
+# Neural speech denoiser (the recommended `--engine df`). Roughly 3 GB because of PyTorch.
+deepfilternet = [
+    "deepfilternet==0.5.6",
+    "torch==2.0.1",
+    "torchaudio==2.0.2",
+]
+
+[project.scripts]
+audio-cleanup = "audio_cleanup.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/audio_cleanup"]
+
+# ---------------------------------------------------------------------------- uv
+[tool.uv]
+# Lock only for the platforms we support; keeps `uv.lock` small and resolution fast.
+environments = ["sys_platform == 'win32'", "sys_platform == 'linux'"]
+
+# On Windows, pull the CUDA 11.8 build of PyTorch: it uses an NVIDIA GPU when present and falls
+# back to the CPU otherwise. On Linux the default PyPI wheels (CUDA 11.7) behave the same way.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu118", marker = "sys_platform == 'win32'", extra = "deepfilternet" }]
+torchaudio = [{ index = "pytorch-cu118", marker = "sys_platform == 'win32'", extra = "deepfilternet" }]
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+# ---------------------------------------------------------------------------- tools
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "integration: needs ffmpeg and runs a real (tiny) cleanup; deselect with -m 'not integration'",
+]

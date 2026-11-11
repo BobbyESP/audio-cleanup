@@ -1,0 +1,44 @@
+# --- Python / uv -------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# --- Tooling caches ----------------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Recordings and generated media ------------------------------------------
+# Never commit recordings: they are huge (GB) and may contain people's voices/faces.
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.m4a
+*.flac
+*.wav
+# ...except the small demo clips in docs/samples/.
+!docs/samples/*.mp4
+!docs/samples/*.wav
+
+# Intermediate files and reports produced by the tool
+audio-cleanup-*/
+*_denoise.flac
+*_chapters.txt
+diagnose_report.txt
+
+# Local data folders (put your recordings here if you like)
+/data/
+/recordings/
+
+# --- Editors / OS ------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
