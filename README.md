@@ -2,13 +2,16 @@
 
 Remove mains hum and background noise from long recordings (conference talks, podcasts, OBS captures), then normalize the loudness. The video is **never re-encoded**; only the audio track is replaced.
 
-It was built to clean 10 hours of DevFest Ourense recordings that had 50 Hz ground-loop hum and hiss, and it is designed to handle files of any length with constant memory use.
+> **Used in production:** this tool was used to clean the audio of the **DevFest Ourense 2026** recordings (about 10 hours of talks with 50 Hz ground-loop hum and hiss).
+
+It is designed to handle files of any length with constant memory use.
 
 ![Spectrograms: original vs. cleaned](docs/samples/spectrograms.png)
 
-*Top to bottom: the original (horizontal lines at 50, 150, 350 Hz… are the hum), the lightweight `nr` engine, and DeepFilterNet at 30 dB (recommended). Audio samples are in [docs/samples](docs/samples).*
+_Top to bottom: the original (horizontal lines at 50, 150, 350 Hz… are the hum), the lightweight `nr` engine, and DeepFilterNet at 30 dB (recommended). Audio samples are in [docs/samples](docs/samples)._
 
 ## Contents
+
 - [What it does](#what-it-does)
 - [Requirements](#requirements)
 - [Quick start](#quick-start) ([Windows](#windows) · [Linux](#linux))
@@ -45,13 +48,13 @@ The recording that motivated this project had **49.8 Hz hum with many (mostly od
 
 ## Requirements
 
-| What | Notes |
-|---|---|
-| **Windows 10/11** or **Linux** (x86-64) | macOS is not tested. |
-| **[uv](https://docs.astral.sh/uv/)** | The setup scripts install it for you. It also downloads Python 3.11 by itself. |
-| **ffmpeg + ffprobe** on `PATH` | Windows: the setup script installs it with winget. Linux: see [Installing ffmpeg](#installing-ffmpeg). |
-| ~3 GB of disk for the environment | Almost all of it is PyTorch (only for the `df` engine). |
-| 2–3 GB free per 10 h of audio | Temporary FLAC, deleted when finished. Change the location with `--workdir`. |
+| What                                    | Notes                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Windows 10/11** or **Linux** (x86-64) | macOS is not tested.                                                                                   |
+| **[uv](https://docs.astral.sh/uv/)**    | The setup scripts install it for you. It also downloads Python 3.11 by itself.                         |
+| **ffmpeg + ffprobe** on `PATH`          | Windows: the setup script installs it with winget. Linux: see [Installing ffmpeg](#installing-ffmpeg). |
+| ~3 GB of disk for the environment       | Almost all of it is PyTorch (only for the `df` engine).                                                |
+| 2–3 GB free per 10 h of audio           | Temporary FLAC, deleted when finished. Change the location with `--workdir`.                           |
 
 An NVIDIA GPU is optional: it makes `df` faster, and everything works on the CPU.
 
@@ -66,15 +69,15 @@ cd audio-cleanup
 
 ### Windows
 
-1. **Double-click `scripts\windows\setup.bat`** (one time). It installs uv and ffmpeg if they are missing, creates the Python environment and checks that everything works. If it installs ffmpeg, open a *new* window and run it once more so Windows picks up the new `PATH`.
+1. **Double-click `scripts\windows\setup.bat`** (one time). It installs uv and ffmpeg if they are missing, creates the Python environment and checks that everything works. If it installs ffmpeg, open a _new_ window and run it once more so Windows picks up the new `PATH`.
 2. **Drag a video onto `scripts\windows\clean.bat`.** The result, `<name>_clean.mp4`, is written next to the original.
 
-| Script | What it does |
-|---|---|
-| `scripts\windows\setup.bat` | One-time install and self-check. Safe to run again. |
-| `scripts\windows\clean.bat` | Clean a video. Drag-and-drop, or pass options from a terminal. |
+| Script                             | What it does                                                       |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| `scripts\windows\setup.bat`        | One-time install and self-check. Safe to run again.                |
+| `scripts\windows\clean.bat`        | Clean a video. Drag-and-drop, or pass options from a terminal.     |
 | `scripts\windows\fix-duration.bat` | Fix a wrong duration in an already processed video. Drag-and-drop. |
-| `scripts\windows\diagnose.bat` | Timestamp report of one or more videos. Drag-and-drop. |
+| `scripts\windows\diagnose.bat`     | Timestamp report of one or more videos. Drag-and-drop.             |
 
 ### Linux
 
@@ -83,12 +86,12 @@ scripts/linux/setup.sh                      # one time; add --install-ffmpeg to 
 scripts/linux/clean.sh /path/to/talk.mp4    # writes /path/to/talk_clean.mp4
 ```
 
-| Script | What it does |
-|---|---|
-| `scripts/linux/setup.sh` | One-time install and self-check. Safe to run again. |
-| `scripts/linux/clean.sh <video> [options]` | Clean a video. |
-| `scripts/linux/fix-duration.sh <video> [--drop]` | Fix a wrong duration in an already processed video. |
-| `scripts/linux/diagnose.sh [files...]` | Timestamp report (default: every `.mp4` in the current folder). |
+| Script                                           | What it does                                                    |
+| ------------------------------------------------ | --------------------------------------------------------------- |
+| `scripts/linux/setup.sh`                         | One-time install and self-check. Safe to run again.             |
+| `scripts/linux/clean.sh <video> [options]`       | Clean a video.                                                  |
+| `scripts/linux/fix-duration.sh <video> [--drop]` | Fix a wrong duration in an already processed video.             |
+| `scripts/linux/diagnose.sh [files...]`           | Timestamp report (default: every `.mp4` in the current folder). |
 
 The scripts are thin wrappers around the `audio-cleanup` command, so everything below works the same on both systems.
 
@@ -106,28 +109,28 @@ On Windows use `scripts\windows\clean.bat "D:\path\recording.mp4" --atten 24` an
 
 ### Commands
 
-| Command | Purpose |
-|---|---|
-| `audio-cleanup clean <input>` | The whole pipeline described above. |
+| Command                              | Purpose                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `audio-cleanup clean <input>`        | The whole pipeline described above.                                                        |
 | `audio-cleanup fix-chapters <input>` | Rewrite the chapter markers of a video so players show the right duration. No re-encoding. |
-| `audio-cleanup diagnose [files…]` | Durations, start times and timestamp gaps of each stream. |
-| `audio-cleanup doctor` | Check ffmpeg and which denoising engines work. |
+| `audio-cleanup diagnose [files…]`    | Durations, start times and timestamp gaps of each stream.                                  |
+| `audio-cleanup doctor`               | Check ffmpeg and which denoising engines work.                                             |
 
 ### Options of `clean`
 
-| Option | Default | What it does |
-|---|---|---|
-| `-o, --output FILE` | `<input>_clean.mp4` | Output file. |
-| `--engine {df,nr}` | `df` | Denoising engine, see [below](#choosing-a-denoising-engine). |
-| `--atten DB` | `30` | `df`: maximum attenuation. `18`–`24` keeps some room tone and sounds more natural; `100` removes as much as possible. |
-| `--strength 0–1` | `0.9` | `nr`: how much noise to remove. |
-| `--lufs LUFS` | `-16` | Target loudness. −16 for speech/podcasts, −14 for YouTube. |
-| `--noise START-END` | automatic | Noise-only stretch, e.g. `00:12:03-00:12:06`. By default silences are searched in the first 10 minutes. With `df` it is only used to detect the hum frequency. |
-| `--chunk SECONDS` | `30` | Processing block length. |
-| `--audio-only` | off | Write only a clean `.m4a`; do not touch the video. |
-| `--workdir DIR` | next to the output | Where intermediate files go. Use a fast disk with 2–3 GB free per 10 h. |
-| `--keep` | off | Keep intermediate files (the denoised FLAC and chapter file). |
-| `-v, --verbose` | off | (global, before the command) debug logging. |
+| Option              | Default             | What it does                                                                                                                                                   |
+| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-o, --output FILE` | `<input>_clean.mp4` | Output file.                                                                                                                                                   |
+| `--engine {df,nr}`  | `df`                | Denoising engine, see [below](#choosing-a-denoising-engine).                                                                                                   |
+| `--atten DB`        | `30`                | `df`: maximum attenuation. `18`–`24` keeps some room tone and sounds more natural; `100` removes as much as possible.                                          |
+| `--strength 0–1`    | `0.9`               | `nr`: how much noise to remove.                                                                                                                                |
+| `--lufs LUFS`       | `-16`               | Target loudness. −16 for speech/podcasts, −14 for YouTube.                                                                                                     |
+| `--noise START-END` | automatic           | Noise-only stretch, e.g. `00:12:03-00:12:06`. By default silences are searched in the first 10 minutes. With `df` it is only used to detect the hum frequency. |
+| `--chunk SECONDS`   | `30`                | Processing block length.                                                                                                                                       |
+| `--audio-only`      | off                 | Write only a clean `.m4a`; do not touch the video.                                                                                                             |
+| `--workdir DIR`     | next to the output  | Where intermediate files go. Use a fast disk with 2–3 GB free per 10 h.                                                                                        |
+| `--keep`            | off                 | Keep intermediate files (the denoised FLAC and chapter file).                                                                                                  |
+| `-v, --verbose`     | off                 | (global, before the command) debug logging.                                                                                                                    |
 
 **Time and disk space:** on a 2-core test machine it ran at about 23× real time, roughly 25–30 minutes for 10 hours. More cores or a GPU make it faster. Besides the output video, which is about the same size as the original, you need the temporary space mentioned above.
 
@@ -135,13 +138,13 @@ On Windows use `scripts\windows\clean.bat "D:\path\recording.mp4" --atten 24` an
 
 [uv](https://docs.astral.sh/uv/) is a fast Python package and project manager. You never create or activate a virtual environment by hand:
 
-| Command | What it does |
-|---|---|
-| `uv sync --extra deepfilternet` | Creates `.venv` with the exact versions in `uv.lock` (downloading Python 3.11 if needed). Add `--extra deepfilternet` for PyTorch + DeepFilterNet. |
-| `uv run audio-cleanup …` | Runs the tool inside `.venv`, syncing first if something changed. No activation needed. |
-| `uv run pytest` / `uv run ruff check .` | Run the tests / the linter (the `dev` dependency group is installed by default). |
-| `uv lock` | Re-resolve and rewrite `uv.lock` after changing `pyproject.toml`. |
-| `uv add <package>` | Add a dependency. |
+| Command                                 | What it does                                                                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `uv sync --extra deepfilternet`         | Creates `.venv` with the exact versions in `uv.lock` (downloading Python 3.11 if needed). Add `--extra deepfilternet` for PyTorch + DeepFilterNet. |
+| `uv run audio-cleanup …`                | Runs the tool inside `.venv`, syncing first if something changed. No activation needed.                                                            |
+| `uv run pytest` / `uv run ruff check .` | Run the tests / the linter (the `dev` dependency group is installed by default).                                                                   |
+| `uv lock`                               | Re-resolve and rewrite `uv.lock` after changing `pyproject.toml`.                                                                                  |
+| `uv add <package>`                      | Add a dependency.                                                                                                                                  |
 
 Why it is set up this way:
 
@@ -152,10 +155,10 @@ Why it is set up this way:
 
 ## Choosing a denoising engine
 
-| Engine | Install | Quality | Speed | Notes |
-|---|---|---|---|---|
+| Engine                 | Install                         | Quality                             | Speed                     | Notes                                                                   |
+| ---------------------- | ------------------------------- | ----------------------------------- | ------------------------- | ----------------------------------------------------------------------- |
 | `df` — DeepFilterNet 3 | `uv sync --extra deepfilternet` | Best. Also removes hiss and clicks. | Faster with an NVIDIA GPU | Built for speech: music (e.g. in breaks) may come out slightly muffled. |
-| `nr` — noisereduce | included | Good for stationary noise | CPU, light | Uses a noise profile from the quiet parts. |
+| `nr` — noisereduce     | included                        | Good for stationary noise           | CPU, light                | Uses a noise profile from the quiet parts.                              |
 
 More engines can be added without touching the pipeline, see [docs/architecture.md](docs/architecture.md#adding-a-denoising-engine).
 
@@ -183,25 +186,25 @@ To investigate timestamp problems, `audio-cleanup diagnose recording.mp4` lists 
 
 `ffmpeg` and `ffprobe` must be on `PATH`. Check with `uv run audio-cleanup doctor`.
 
-| System | Command |
-|---|---|
-| Windows | `winget install -e --id Gyan.FFmpeg` (done by `setup.bat`), then open a new terminal |
-| Debian / Ubuntu | `sudo apt-get install ffmpeg` |
-| Fedora | `sudo dnf install ffmpeg-free` (or `ffmpeg` from RPM Fusion) |
-| Arch | `sudo pacman -S ffmpeg` |
-| openSUSE | `sudo zypper install ffmpeg` |
+| System          | Command                                                                              |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Windows         | `winget install -e --id Gyan.FFmpeg` (done by `setup.bat`), then open a new terminal |
+| Debian / Ubuntu | `sudo apt-get install ffmpeg`                                                        |
+| Fedora          | `sudo dnf install ffmpeg-free` (or `ffmpeg` from RPM Fusion)                         |
+| Arch            | `sudo pacman -S ffmpeg`                                                              |
+| openSUSE        | `sudo zypper install ffmpeg`                                                         |
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| `ffmpeg not found on PATH` | Install it (above) and open a **new** terminal. |
-| `DeepFilterNet is not installed … Falling back to the 'nr' engine` | Run `uv sync --extra deepfilternet` (or `setup.bat` / `setup.sh`). |
-| `uv: command not found` after installing it | Open a new terminal, or add `~/.local/bin` (Linux) / `%USERPROFILE%\.local\bin` (Windows) to `PATH`. |
+| Problem                                                                                   | Solution                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ffmpeg not found on PATH`                                                                | Install it (above) and open a **new** terminal.                                                                                                                                                                                                                                                                 |
+| `DeepFilterNet is not installed … Falling back to the 'nr' engine`                        | Run `uv sync --extra deepfilternet` (or `setup.bat` / `setup.sh`).                                                                                                                                                                                                                                              |
+| `uv: command not found` after installing it                                               | Open a new terminal, or add `~/.local/bin` (Linux) / `%USERPROFILE%\.local\bin` (Windows) to `PATH`.                                                                                                                                                                                                            |
 | A PyTorch warning that your GPU is "not compatible with the current PyTorch installation" | Seen with very recent GPUs (e.g. an RTX 50-series), because PyTorch 2.0.1 predates them; processing still completed correctly in our tests. If you get CUDA errors, force the CPU: `CUDA_VISIBLE_DEVICES= uv run audio-cleanup clean …` (Linux) or `set CUDA_VISIBLE_DEVICES=` in the terminal first (Windows). |
-| `No space left on device` while cleaning | Point `--workdir` to a disk with 2–3 GB free per 10 h of audio. |
-| The player shows a duration much longer than the video | Run `fix-chapters` (above). |
-| Hum is still audible | Pass a clean noise-only stretch with `--noise START-END`, and/or raise the attenuation limit (`--atten 100` = unlimited). |
+| `No space left on device` while cleaning                                                  | Point `--workdir` to a disk with 2–3 GB free per 10 h of audio.                                                                                                                                                                                                                                                 |
+| The player shows a duration much longer than the video                                    | Run `fix-chapters` (above).                                                                                                                                                                                                                                                                                     |
+| Hum is still audible                                                                      | Pass a clean noise-only stretch with `--noise START-END`, and/or raise the attenuation limit (`--atten 100` = unlimited).                                                                                                                                                                                       |
 
 ## Use it as a Python library
 
@@ -251,3 +254,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). In short: `uv sync`, `uv run pytest`, `u
 ## License
 
 [MIT](LICENSE). DeepFilterNet and the other dependencies have their own licenses.
+
+---
+
+<p align="center">
+  This project is part of the <strong>Galicia Developer Group</strong> and <strong>GDG Ourense</strong>.
+</p>
+
+<p align="center">
+  <strong>Galicia Developer Group</strong><br>
+  <a href="https://gdg.gal/">gdg.gal</a>
+</p>
+
+<p align="center">
+  <strong>GDG Ourense</strong><br>
+  <a href="https://gdgourense.es/">gdgourense.es</a> ·
+  <a href="https://devfest.gdgourense.es/">DevFest Ourense</a> ·
+  <a href="https://gdg.community.dev/gdg-ourense/">Community page</a> ·
+  <a href="https://www.instagram.com/gdgourense/">Instagram</a> ·
+  <a href="https://x.com/gdgourense">X</a>
+</p>
