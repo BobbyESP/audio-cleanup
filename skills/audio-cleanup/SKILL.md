@@ -1,13 +1,16 @@
 ---
 name: audio-cleanup
 description: Remove mains hum (50/60 Hz ground loop) and background noise/hiss from long video or audio recordings, then normalize loudness (EBU R128), without re-encoding the video. Use this skill whenever the user wants to clean up, denoise, de-hum or "fix the sound" of a recording — conference talks, podcasts, OBS captures, lectures, interviews, webinars — or wants a talk ready for YouTube loudness, even if they don't mention hum or LUFS explicitly. Also use it when an OBS/remuxed MP4 shows a wrong (too long) duration in players, or to inspect stream durations and timestamp gaps of MP4 files.
+license: MIT
+compatibility: Needs a shell, uv (https://docs.astral.sh/uv/) and ffmpeg/ffprobe on PATH; network access on the first run. Linux and Windows (macOS untested).
 ---
 
 # audio-cleanup
 
-This skill drives the `audio-cleanup` command line tool that lives in this repository. The tool
-does the heavy lifting; your job is to pick the right options for what the user wants, make sure
-the environment is ready, run it safely on files that may be hours long, and check the result.
+This skill drives the [`audio-cleanup`](https://github.com/BobbyESP/audio-cleanup) command line
+tool. The tool does the heavy lifting; your job is to pick the right options for what the user
+wants, make sure the environment is ready, run it safely on files that may be hours long, and check
+the result.
 
 Pipeline of `clean` (for reference when explaining results):
 
@@ -18,22 +21,37 @@ decode (mono 48 kHz, streamed) -> 70 Hz high-pass + notch on every hum harmonic 
   -> remux with the original video stream copied (-c:v copy) -> <input>_clean.mp4
 ```
 
-## 1. Locate the project
+## 1. Decide how to run the tool
 
-The project root is **two directories above this skill's base directory** (`skills/audio-cleanup/`
-→ repository root, the folder with `pyproject.toml`). Call it `ROOT` and run every command as:
+The skill works in two modes. Pick one once per session; in the rest of this skill,
+`audio-cleanup …` means "the command of the chosen mode".
+
+**Local mode: the skill sits inside a clone of the repository.** This is the case when it was
+installed as a Claude Code plugin or the agent was started in the repository. Check it with:
 
 ```bash
-uv run --project "$ROOT" audio-cleanup <command> ...
+SKILL_DIR="<this skill's base directory>"
+ROOT="$(cd "$(dirname "$(realpath "$SKILL_DIR/SKILL.md")")/../.." && pwd)"
+grep -qs '^name = "audio-cleanup"' "$ROOT/pyproject.toml" && echo local || echo remote
 ```
 
-`uv run --project` works from any current directory, so keep the user's files where they are and
-pass absolute paths. Quote paths: recordings often have spaces or `&` in their names.
+If it prints `local`, run the tool as `audio-cleanup …`. This uses the
+locked versions in `uv.lock` and the scripts and docs of the clone.
+
+**Remote mode: the skill folder was copied on its own** into an agent's skills directory. Run
+the tool straight from GitHub; uv downloads and caches it on the first call (about 15 s):
+
+```bash
+uvx --python 3.11 --from git+https://github.com/BobbyESP/audio-cleanup audio-cleanup …
+```
+
+Either way, keep the user's files where they are and pass absolute paths. Quote them, because
+recordings often have spaces or `&` in their names.
 
 ## 2. Check the environment (once per session)
 
 ```bash
-uv run --project "$ROOT" audio-cleanup doctor
+audio-cleanup doctor
 ```
 
 It reports ffmpeg/ffprobe and which engines work. It exits with 1 when the recommended `df`
@@ -43,11 +61,11 @@ engine is missing; that is fine if the user is happy with `--engine nr`. Fix wha
 | --- | --- |
 | `uv` not found | Install it: `curl -LsSf https://astral.sh/uv/install.sh \| sh` (Linux/macOS) or `powershell -c "irm https://astral.sh/uv/install.ps1 \| iex"` (Windows). It may land in `~/.local/bin`, which might not be on `PATH` yet. |
 | ffmpeg / ffprobe | Tell the user the command for their system (`sudo apt-get install ffmpeg`, `sudo pacman -S ffmpeg`, `sudo dnf install ffmpeg-free`, `winget install -e --id Gyan.FFmpeg`). It needs sudo/admin, so let the user run it unless they ask you to. |
-| engine `df` unavailable | `uv sync --project "$ROOT" --extra deepfilternet`. This downloads **about 3 GB** (PyTorch), so ask before doing it. If the user doesn't want that, use `--engine nr`, which works with the base install. |
+| engine `df` unavailable | It needs the `deepfilternet` extra, which downloads **about 3 GB** (PyTorch), so ask before installing it. Local mode: `uv sync --project "$ROOT" --extra deepfilternet`. Remote mode: from then on use `--from "audio-cleanup[deepfilternet] @ git+https://github.com/BobbyESP/audio-cleanup"` in the `uvx` command (doctor's hint about `uv sync` only applies to local mode). If the user doesn't want the download, use `--engine nr`, which works with the base install. |
 
-The first `uv run` creates the environment itself (Python 3.11 included), so there is no separate
-install step for the lean setup. The repo also ships `scripts/linux/setup.sh` and
-`scripts/windows/setup.bat`, which do all of the above for a human at a terminal.
+uv also downloads Python 3.11 when needed, so there is no separate install step. In local mode the
+repository also ships `scripts/linux/setup.sh` and `scripts/windows/setup.bat`, which do all of
+the above for a human at a terminal.
 
 ## 3. Choose the options
 
@@ -77,7 +95,7 @@ Notes that help you choose:
 ## 4. Run it
 
 ```bash
-uv run --project "$ROOT" audio-cleanup clean "/abs/path/talk.mp4" [flags]
+audio-cleanup clean "/abs/path/talk.mp4" [flags]
 ```
 
 Before a long file, check its length and the free disk space, because both shape what you do next:
@@ -110,18 +128,23 @@ Never write over the user's original: the default output is `<input>_clean.mp4` 
 After a run, confirm the output exists and is sane, then report it to the user:
 
 ```bash
-uv run --project "$ROOT" audio-cleanup diagnose "/abs/path/talk_clean.mp4"
+audio-cleanup diagnose "/abs/path/talk_clean.mp4"
 ```
 
 The durations of the video and audio streams should match the original. To confirm the loudness
-target, measure it (the `I:` line of the summary should be close to the `--lufs` value):
+target, measure it. The summary starts at the `Summary:` line; its `I:` value (integrated loudness)
+should be within about 1 LU of the `--lufs` target, and `Peak:` below the -1.5 dBTP ceiling:
 
 ```bash
-ffmpeg -hide_banner -nostats -i "/abs/path/talk_clean.mp4" -map 0:a:0 -af ebur128 -f null - 2>&1 | tail -12
+ffmpeg -hide_banner -nostats -i "/abs/path/talk_clean.mp4" -map 0:a:0 -af ebur128=peak=true -f null - 2>&1 \
+  | sed -n '/Summary:/,$p'
 ```
 
+Read the `I:` line before drawing conclusions; if it is not in the output, the command was cut short,
+not the loudness wrong.
+
 You cannot listen to audio, so be honest about that: say what was measured, and suggest the user
-listen to a couple of passages on headphones (especially speech onsets and any music). The repo has
+listen to a couple of passages on headphones (especially speech onsets and any music). The repository has
 before/after samples in `docs/samples/` that show what to expect.
 
 ## Other commands
@@ -146,4 +169,4 @@ Global `-v` (before the command) enables debug logging, useful when something fa
 | Hum still audible | `--noise START-END` on a pure-noise stretch, and/or `--atten 100`. |
 
 For the internals (how hum is detected, how engines are added) see `docs/architecture.md` in the
-repository; you only need it if the user wants to change the tool itself.
+repository (on GitHub in remote mode); you only need it if the user wants to change the tool itself.

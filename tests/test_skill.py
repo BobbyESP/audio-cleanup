@@ -58,8 +58,9 @@ def test_skill_frontmatter() -> None:
 
 def test_skill_only_mentions_existing_options() -> None:
     body = SKILL_MD.read_text(encoding="utf-8")
-    # Options of other tools the skill shows: `uv run --project`, `uv sync --extra`, `winget --id`.
-    external_options = {"--project", "--extra", "--id"}
+    # Options of other tools the skill shows: `uv run --project`, `uv sync --extra`,
+    # `uvx --python --from` and `winget --id`.
+    external_options = {"--project", "--extra", "--python", "--from", "--id"}
     mentioned = set(re.findall(r"(?<![\w-])--[a-z][a-z-]+", body)) - external_options
     assert mentioned, "the option scan found nothing; the regex is probably broken"
     assert mentioned <= _cli_options(), f"unknown options: {sorted(mentioned - _cli_options())}"
