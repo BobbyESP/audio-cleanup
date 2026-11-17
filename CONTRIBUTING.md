@@ -36,6 +36,7 @@ CI runs `ruff check`, `ruff format --check` and `pytest` on Ubuntu and Windows; 
 - **Add tests** for new behavior. Prefer small pure functions that can be tested without ffmpeg; use the `noisy_video` fixture for end-to-end checks.
 - **Do not commit recordings.** `.gitignore` blocks `*.mp4`, `*.wav`, etc. everywhere except `docs/samples/`.
 - **Commit `uv.lock`** whenever dependencies change.
+- **Keep the Claude Code skill in sync.** If you add, rename or remove a command or option, update `skills/audio-cleanup/SKILL.md` (`tests/test_skill.py` fails on options it does not know). When you bump the version in `pyproject.toml`, bump `.claude-plugin/plugin.json` too.
 - **Everything user-facing is in English** (code, comments, docs, messages).
 - Windows launchers must stay CRLF and Linux launchers LF (enforced by `.gitattributes`). If you edit a launcher, test it by dragging a file with spaces and `&` in its name onto the `.bat`.
 

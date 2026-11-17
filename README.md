@@ -16,6 +16,7 @@ _Top to bottom: the original (horizontal lines at 50, 150, 350 Hz… are the hum
 - [Requirements](#requirements)
 - [Quick start](#quick-start) ([Windows](#windows) · [Linux](#linux))
 - [Usage](#usage)
+- [Use it from Claude Code](#use-it-from-claude-code)
 - [How uv is used here](#how-uv-is-used-here)
 - [Choosing a denoising engine](#choosing-a-denoising-engine)
 - [OBS chapter markers and wrong durations](#obs-chapter-markers-and-wrong-durations)
@@ -134,6 +135,17 @@ On Windows use `scripts\windows\clean.bat "D:\path\recording.mp4" --atten 24` an
 
 **Time and disk space:** on a 2-core test machine it ran at about 23× real time, roughly 25–30 minutes for 10 hours. More cores or a GPU make it faster. Besides the output video, which is about the same size as the original, you need the temporary space mentioned above.
 
+## Use it from Claude Code
+
+The repository is also a [Claude Code](https://code.claude.com) plugin with an `audio-cleanup` skill. Once it is installed you can ask Claude in plain words ("clean up the audio of `~/Videos/devfest-track1.mp4` for YouTube", "the hum is still there, remove more noise"). Claude checks the setup, picks the options, runs the long jobs in the background and measures the result.
+
+```text
+/plugin marketplace add BobbyESP/audio-cleanup
+/plugin install audio-cleanup@audio-cleanup
+```
+
+The skill ([`skills/audio-cleanup/SKILL.md`](skills/audio-cleanup/SKILL.md)) only drives the `audio-cleanup` command, so you still need [uv](https://docs.astral.sh/uv/) and ffmpeg (see [Requirements](#requirements)). Claude asks before it downloads the ~3 GB DeepFilterNet extra and offers the `nr` engine instead. To try local changes to the skill, start Claude in the repository with `claude --plugin-dir .`.
+
 ## How uv is used here
 
 [uv](https://docs.astral.sh/uv/) is a fast Python package and project manager. You never create or activate a virtual environment by hand:
@@ -233,6 +245,8 @@ The library reports through `logging` and the optional `progress` callback; it n
 │   ├── postprocess.py       Clarity EQ and two-pass loudnorm
 │   ├── chapters.py          OBS chapter repair
 │   └── ffmpeg.py            All ffmpeg/ffprobe subprocess handling
+├── skills/audio-cleanup/     Claude Code skill (SKILL.md) that drives the CLI
+├── .claude-plugin/          Claude Code plugin and marketplace manifests
 ├── scripts/
 │   ├── windows/             .bat launchers (drag-and-drop)
 │   └── linux/               .sh launchers

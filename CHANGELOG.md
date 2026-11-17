@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Claude Code plugin (`.claude-plugin/`) with an `audio-cleanup` skill (`skills/audio-cleanup/SKILL.md`)
+  that lets Claude set up, run and check cleanups from plain-language requests.
+- `tests/test_skill.py` keeps the skill and the plugin manifests in sync with the CLI and the package version.
+
 ## [0.1.0]
 
 First public version. The original scripts were reorganized into an installable package.
