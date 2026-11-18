@@ -1,0 +1,17 @@
+{
+  "name": "audio-cleanup",
+  "owner": {
+    "name": "Gabriel Fontán Rodiño"
+  },
+  "metadata": {
+    "description": "Claude Code plugin for the audio-cleanup tool."
+  },
+  "plugins": [
+    {
+      "name": "audio-cleanup",
+      "source": "./",
+      "description": "Remove mains hum and background noise from long recordings and normalize loudness, without re-encoding the video.",
+      "category": "media"
+    }
+  ]
+}

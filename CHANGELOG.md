@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `audio-cleanup` [Agent Skill](https://agentskills.io) (`skills/audio-cleanup/SKILL.md`) that lets
+  coding agents (Claude Code, Codex, Gemini CLI, Cursor, Copilot…) set up, run and check cleanups from
+  plain-language requests. It runs the local clone when there is one, or the tool straight from GitHub
+  with `uvx` when the skill was installed on its own (`npx skills add BobbyESP/audio-cleanup`).
+- Claude Code plugin and marketplace manifests (`.claude-plugin/`).
+- `tests/test_skill.py` keeps the skill and the plugin manifests in sync with the CLI and the package version.
+
 ## [0.1.0]
 
 First public version. The original scripts were reorganized into an installable package.

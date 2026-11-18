@@ -1,0 +1,12 @@
+{
+  "name": "audio-cleanup",
+  "version": "0.1.0",
+  "description": "Remove mains hum and background noise from long recordings (talks, podcasts, OBS captures) and normalize loudness, without re-encoding the video.",
+  "author": {
+    "name": "Gabriel Fontán Rodiño"
+  },
+  "homepage": "https://github.com/BobbyESP/audio-cleanup",
+  "repository": "https://github.com/BobbyESP/audio-cleanup",
+  "license": "MIT",
+  "keywords": ["audio", "denoise", "hum", "deepfilternet", "ffmpeg", "loudnorm", "obs"]
+}
